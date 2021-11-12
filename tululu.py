@@ -1,9 +1,24 @@
+import argparse
 import logging
 import os
 from urllib.parse import urljoin, urlparse, unquote
 
 import requests
 from bs4 import BeautifulSoup
+
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(description='Downloading books from the '
+                                                 'website tululu.org')
+    parser.add_argument('start_id', nargs='?',
+                        help='Enter the number of the first page',
+                        default=1,
+                        type=int)
+    parser.add_argument('end_id', nargs='?',
+                        help='Enter the number of the last page',
+                        default=10,
+                        type=int)
+    return parser.parse_args()
 
 
 def check_for_redirect(response):
@@ -75,8 +90,8 @@ def download_image(url, folder='images'):
         file.write(img)
 
 
-def get_books(books_amount=10):
-    for book_id in range(1, books_amount + 1):
+def get_books(start_id, end_id):
+    for book_id in range(start_id, end_id + 1):
         params = {
             'id': book_id,
         }
@@ -86,22 +101,28 @@ def get_books(books_amount=10):
         try:
             check_for_redirect(response)
         except requests.exceptions.HTTPError:
-            logging.info(f'Книга с id = {book_id} не найдена.')
+            logging.info(f'Книга с id = {book_id} не найдена.\n')
             continue
 
-        title, author, img_url, comments, genres = get_book_features(book_id)
+        title, author, img_url, comments, genres = parse_book_page(book_id)
         print('Заголовок:', title)
+        print('Автор:', author)
         # for comment in comments:
         #     print(comment)
-        print(genres)
+        # print(genres)
         print()
 
-        download_txt(response.text, book_id, title)
-        download_image(img_url)
+        # download_txt(response.text, book_id, title)
+        # download_image(img_url)
 
 
 def main():
-    get_books()
+    start_id = parse_arguments().start_id
+    end_id = parse_arguments().end_id
+    if start_id > end_id:
+        logging.error('Номер начальной страницы не может быть больше последней')
+        return
+    get_books(start_id, end_id)
 
 
 if __name__ == '__main__':
