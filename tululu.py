@@ -30,7 +30,14 @@ def get_book_features(book_id):
         comment_text_tag = comment_tag.find(class_='black')
         comment_text = comment_text_tag.text
         comment_texts.append(comment_text)
-    return title, author, img_url, comment_texts
+
+    genres_tag = soup.find('span', class_='d_book').find_all('a')
+    genres = []
+    for genre_tag in genres_tag:
+        genre = genre_tag.text
+        genres.append(genre)
+
+    return title, author, img_url, comment_texts, genres
 
 
 def download_txt(text, book_id, filename, folder='books'):
@@ -82,10 +89,11 @@ def get_books(books_amount=10):
             logging.info(f'Книга с id = {book_id} не найдена.')
             continue
 
-        title, author, img_url, comments = get_book_features(book_id)
-        print(title)
-        for comment in comments:
-            print(comment)
+        title, author, img_url, comments, genres = get_book_features(book_id)
+        print('Заголовок:', title)
+        # for comment in comments:
+        #     print(comment)
+        print(genres)
         print()
 
         download_txt(response.text, book_id, title)
