@@ -1,7 +1,7 @@
 import argparse
 import logging
 import os
-from urllib.parse import urljoin, urlparse, unquote
+from urllib.parse import unquote, urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup
@@ -19,11 +19,6 @@ def parse_arguments():
                         default=10,
                         type=int)
     return parser.parse_args()
-
-
-def check_for_redirect(response):
-    if response.history:
-        raise requests.exceptions.HTTPError
 
 
 def parse_book_page(book_id):
@@ -90,6 +85,11 @@ def download_image(url, folder='images'):
         file.write(img)
 
 
+def check_for_redirect(response):
+    if response.history:
+        raise requests.exceptions.HTTPError
+
+
 def get_books(start_id, end_id):
     for book_id in range(start_id, end_id + 1):
         params = {
@@ -101,26 +101,26 @@ def get_books(start_id, end_id):
         try:
             check_for_redirect(response)
         except requests.exceptions.HTTPError:
-            logging.info(f'Книга с id = {book_id} не найдена.\n')
+            logging.info(f'Book with id = {book_id} not found.\n')
             continue
 
         title, author, img_url, comments, genres = parse_book_page(book_id)
-        print('Заголовок:', title)
-        print('Автор:', author)
-        # for comment in comments:
-        #     print(comment)
-        # print(genres)
+
+        print('Title:', title)
+        print('Author:', author)
         print()
 
-        # download_txt(response.text, book_id, title)
-        # download_image(img_url)
+        download_txt(response.text, book_id, title)
+        download_image(img_url)
 
 
 def main():
     start_id = parse_arguments().start_id
     end_id = parse_arguments().end_id
     if start_id > end_id:
-        logging.error('Номер начальной страницы не может быть больше последней')
+        logging.error(
+            'The number of start page cannot be greater than the last one.'
+        )
         return
     get_books(start_id, end_id)
 
