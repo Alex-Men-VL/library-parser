@@ -1,5 +1,6 @@
 import logging
 import os
+from urllib.parse import urljoin, urlparse, unquote
 
 import requests
 from bs4 import BeautifulSoup
@@ -10,7 +11,7 @@ def check_for_redirect(response):
         raise requests.exceptions.HTTPError
 
 
-def get_book_title_and_author(book_id):
+def get_book_features(book_id):
     url = f'https://tululu.org/b{book_id}'
     response = requests.get(url)
     response.raise_for_status()
@@ -19,10 +20,14 @@ def get_book_title_and_author(book_id):
 
     title_with_author = soup.find(class_='ow_px_td').find('h1').text
     title, author = map(lambda x: x.strip(), title_with_author.split('::'))
-    return title, author
+
+    img_relative_address = soup.find(class_='bookimage').find('img')['src']
+    img_url = urljoin(url, img_relative_address).strip()
+    return title, author, img_url
 
 
 def download_txt(text, book_id, filename, folder='books'):
+    os.makedirs(folder, exist_ok=True)
     filename = filename.replace(r'\\', '').replace('/', '')
     name, extension = os.path.splitext(filename)
     if extension != '.txt':
@@ -31,6 +36,29 @@ def download_txt(text, book_id, filename, folder='books'):
     with open(filepath, 'w') as file:
         file.write(text)
     return filepath
+
+
+def find_filename_in_url(url):
+    filepath = urlparse(unquote(url)).path
+    _, filename = os.path.split(filepath)
+    return filename
+
+
+def get_img_from_url(url):
+    response = requests.get(url)
+    response.raise_for_status()
+    return response.content
+
+
+def download_image(url, folder='images'):
+    os.makedirs(folder, exist_ok=True)
+
+    filename = find_filename_in_url(url)
+    filepath = os.path.join(folder, filename)
+    img = get_img_from_url(url)
+
+    with open(filepath, 'wb') as file:
+        file.write(img)
 
 
 def get_books(books_amount=10):
@@ -47,12 +75,13 @@ def get_books(books_amount=10):
             logging.info(f'Книга с id = {book_id} не найдена.')
             continue
 
-        title, author = get_book_title_and_author(book_id)
+        title, author, img_url = get_book_features(book_id)
+
         download_txt(response.text, book_id, title)
+        download_image(img_url)
 
 
 def main():
-    os.makedirs('books', exist_ok=True)
     get_books()
 
 
