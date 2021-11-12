@@ -23,7 +23,14 @@ def get_book_features(book_id):
 
     img_relative_address = soup.find(class_='bookimage').find('img')['src']
     img_url = urljoin(url, img_relative_address).strip()
-    return title, author, img_url
+
+    comment_tags = soup.find_all(class_='texts')
+    comment_texts = []
+    for comment_tag in comment_tags:
+        comment_text_tag = comment_tag.find(class_='black')
+        comment_text = comment_text_tag.text
+        comment_texts.append(comment_text)
+    return title, author, img_url, comment_texts
 
 
 def download_txt(text, book_id, filename, folder='books'):
@@ -75,7 +82,11 @@ def get_books(books_amount=10):
             logging.info(f'Книга с id = {book_id} не найдена.')
             continue
 
-        title, author, img_url = get_book_features(book_id)
+        title, author, img_url, comments = get_book_features(book_id)
+        print(title)
+        for comment in comments:
+            print(comment)
+        print()
 
         download_txt(response.text, book_id, title)
         download_image(img_url)
