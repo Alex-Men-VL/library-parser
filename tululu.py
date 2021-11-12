@@ -22,7 +22,7 @@ def parse_arguments():
 
 
 def parse_book_page(book_id):
-    url = f'https://tululu.org/b{book_id}'
+    url = f'https://tululu.org/b{book_id}/'
     response = requests.get(url)
     response.raise_for_status()
 
