@@ -11,7 +11,7 @@ def check_for_redirect(response):
         raise requests.exceptions.HTTPError
 
 
-def get_book_features(book_id):
+def parse_book_page(book_id):
     url = f'https://tululu.org/b{book_id}'
     response = requests.get(url)
     response.raise_for_status()
