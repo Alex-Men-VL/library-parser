@@ -5,6 +5,7 @@ from urllib.parse import unquote, urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup
+from requests.exceptions import ConnectionError, HTTPError, InvalidURL
 
 
 def parse_arguments():
@@ -89,7 +90,7 @@ def download_image(url, folder='images'):
 
 def check_for_redirect(response):
     if response.history:
-        raise requests.exceptions.HTTPError
+        raise HTTPError
 
 
 def get_books(start_id, end_id):
@@ -99,10 +100,10 @@ def get_books(start_id, end_id):
         }
         url = 'https://tululu.org/txt.php'
         response = requests.get(url, params=params)
-        response.raise_for_status()
         try:
+            response.raise_for_status()
             check_for_redirect(response)
-        except requests.exceptions.HTTPError:
+        except (ConnectionError, InvalidURL, HTTPError):
             logging.info(f'Book with id = {book_id} not found.\n')
             continue
 
