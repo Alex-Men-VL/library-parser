@@ -54,7 +54,7 @@ def parse_book_page(book_id):
     return book_description
 
 
-def download_txt(text, book_id, filename, folder='books'):
+def save_book_text(text, book_id, filename, folder='books'):
     os.makedirs(folder, exist_ok=True)
     filename = filename.replace(r'\\', '').replace('/', '')
     name, extension = os.path.splitext(filename)
@@ -68,24 +68,24 @@ def download_txt(text, book_id, filename, folder='books'):
     return filepath
 
 
-def find_filename_in_url(url):
+def get_image_name(url):
     filepath = urlparse(unquote(url)).path
     _, filename = os.path.split(filepath)
     return filename
 
 
-def get_img_from_url(url):
+def download_image(url):
     response = requests.get(url)
     response.raise_for_status()
     return response.content
 
 
-def download_image(url, folder='images'):
+def save_book_cover(url, folder='images'):
     os.makedirs(folder, exist_ok=True)
 
-    filename = find_filename_in_url(url)
+    filename = get_image_name(url)
     filepath = os.path.join(folder, filename)
-    img = get_img_from_url(url)
+    img = download_image(url)
 
     with open(filepath, 'wb') as file:
         file.write(img)
@@ -116,8 +116,8 @@ def get_books(start_id, end_id):
         print('Author:', book_description['author'])
         print()
 
-        download_txt(response.text, book_id, book_description['title'])
-        download_image(book_description['img_url'])
+        save_book_text(response.text, book_id, book_description['title'])
+        save_book_cover(book_description['img_url'])
 
 
 def main():
