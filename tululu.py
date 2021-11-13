@@ -56,12 +56,8 @@ def parse_book_page(book_id):
 
 def save_book_text(text, book_id, filename, folder='books'):
     os.makedirs(folder, exist_ok=True)
-    filename = filename.replace(r'\\', '').replace('/', '')
-    name, extension = os.path.splitext(filename)
-    if not extension:
-        filename = f'{book_id}. {filename}.txt'
-    else:
-        filename = f'{book_id}. {filename}'
+    book_name = filename.replace(r'\\', '').replace('/', '')
+    filename = f'{book_id}. {book_name}.txt'
     filepath = os.path.join(folder, filename)
     with open(filepath, 'w') as file:
         file.write(text)
