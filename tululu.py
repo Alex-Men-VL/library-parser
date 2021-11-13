@@ -117,6 +117,8 @@ def get_books(start_id, end_id):
 
 
 def main():
+    logging.basicConfig(level=logging.INFO)
+
     start_id = parse_arguments().start_id
     end_id = parse_arguments().end_id
     if start_id > end_id:
@@ -128,5 +130,4 @@ def main():
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
     main()
