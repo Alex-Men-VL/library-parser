@@ -119,8 +119,9 @@ def get_books(start_id, end_id):
 def main():
     logging.basicConfig(level=logging.INFO)
 
-    start_id = parse_arguments().start_id
-    end_id = parse_arguments().end_id
+    args = parse_arguments()
+    start_id = args.start_id
+    end_id = args.end_id
     if start_id > end_id:
         logging.error(
             'The number of start page cannot be greater than the last one.'
