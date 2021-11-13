@@ -54,16 +54,6 @@ def parse_book_page(book_id):
     return book_description
 
 
-def save_book_text(text, book_id, filename, folder='books'):
-    os.makedirs(folder, exist_ok=True)
-    book_name = filename.replace(r'\\', '').replace('/', '')
-    filename = f'{book_id}. {book_name}.txt'
-    filepath = os.path.join(folder, filename)
-    with open(filepath, 'w') as file:
-        file.write(text)
-    return filepath
-
-
 def get_image_name(url):
     filepath = urlparse(unquote(url)).path
     _, filename = os.path.split(filepath)
@@ -85,6 +75,16 @@ def save_book_cover(url, folder='images'):
 
     with open(filepath, 'wb') as file:
         file.write(img)
+
+
+def save_book_text(text, book_id, filename, folder='books'):
+    os.makedirs(folder, exist_ok=True)
+    book_name = filename.replace(r'\\', '').replace('/', '')
+    filename = f'{book_id}. {book_name}.txt'
+    filepath = os.path.join(folder, filename)
+    with open(filepath, 'w') as file:
+        file.write(text)
+    return filepath
 
 
 def check_for_redirect(response):
