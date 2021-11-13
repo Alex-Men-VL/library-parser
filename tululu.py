@@ -43,7 +43,15 @@ def parse_book_page(book_id):
     genres_tag = soup.find('span', class_='d_book').find_all('a')
     genres = [genre_tag.text for genre_tag in genres_tag]
 
-    return title.strip(), author.strip(), img_url, comment_texts, genres
+    book_description = {
+        'title': title.strip(),
+        'author': author.strip(),
+        'img_url': img_url,
+        'comments': comment_texts,
+        'genres': genres,
+    }
+
+    return book_description
 
 
 def download_txt(text, book_id, filename, folder='books'):
@@ -102,14 +110,14 @@ def get_books(start_id, end_id):
             logging.info(f'Book with id = {book_id} not found.\n')
             continue
 
-        title, author, img_url, comments, genres = parse_book_page(book_id)
+        book_description = parse_book_page(book_id)
 
-        print('Title:', title)
-        print('Author:', author)
+        print('Title:', book_description['title'])
+        print('Author:', book_description['author'])
         print()
 
-        download_txt(response.text, book_id, title)
-        download_image(img_url)
+        download_txt(response.text, book_id, book_description['title'])
+        download_image(book_description['img_url'])
 
 
 def main():
