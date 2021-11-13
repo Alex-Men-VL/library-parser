@@ -29,8 +29,8 @@ def parse_book_page(book_id):
 
     soup = BeautifulSoup(response.text, 'lxml')
 
-    title_with_author = soup.find(class_='ow_px_td').find('h1').text
-    title, author = map(lambda x: x.strip(), title_with_author.split('::'))
+    title_author = soup.find(class_='ow_px_td').find('h1').text
+    title, author = map(lambda x: x.strip(), title_author.split('::'))
 
     img_relative_address = soup.find(class_='bookimage').find('img')['src']
     img_url = urljoin(url, img_relative_address).strip()
