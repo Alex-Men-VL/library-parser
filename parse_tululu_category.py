@@ -1,3 +1,4 @@
+import argparse
 import json
 import logging
 import os
@@ -10,6 +11,20 @@ from requests.exceptions import ConnectionError, HTTPError, InvalidURL
 
 BOOK_NUMBER = 1
 BOOK_DESCRIPTIONS = []
+
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(description='Downloading books from the '
+                                                 'website tululu.org')
+    parser.add_argument('start_page', nargs='?',
+                        help='Enter the number of the first page',
+                        default=1,
+                        type=int)
+    parser.add_argument('end_page', nargs='?',
+                        help='Enter the number of the last page',
+                        default=702,
+                        type=int)
+    return parser.parse_args()
 
 
 def get_books_from_page(page: str):
@@ -146,7 +161,18 @@ def check_for_redirect(response):
 
 def main():
     logging.basicConfig(level=logging.INFO)
-    for page in range(1, 2):
+
+    args = parse_arguments()
+    start_page = args.start_page
+    end_page = args.end_page
+
+    if start_page >= end_page:
+        logging.error(
+            'The number of start page cannot be greater than the last one.'
+        )
+        return
+
+    for page in range(start_page, end_page):
         get_books_from_page(str(page))
     save_book_description(BOOK_DESCRIPTIONS)
 
