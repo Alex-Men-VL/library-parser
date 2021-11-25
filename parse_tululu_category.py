@@ -16,18 +16,35 @@ BOOK_DESCRIPTIONS = []
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Downloading books from the '
                                                  'website tululu.org')
-    parser.add_argument('start_page', nargs='?',
+    parser.add_argument('--start_page',
                         help='Enter the number of the first page',
                         default=1,
                         type=int)
-    parser.add_argument('end_page', nargs='?',
+    parser.add_argument('--end_page',
                         help='Enter the number of the last page',
                         default=702,
                         type=int)
+    parser.add_argument('--dest_folder',
+                        help='Enter the path to the directory with the parsing '
+                             'results: pictures, books, JSON',
+                        default='',
+                        type=str)
+    parser.add_argument('--skip_imgs',
+                        help='Do not download images',
+                        default=False,
+                        type=bool)
+    parser.add_argument('--skip_txt',
+                        help='Do not download books',
+                        default=False,
+                        type=bool)
+    parser.add_argument('--json_path',
+                        help='Specify your path to *.json file with results',
+                        default='book_descriptions.json',
+                        type=str)
     return parser.parse_args()
 
 
-def get_books_from_page(page: str):
+def get_books_from_page(page, dest_folder, skip_imgs, skip_txt):
     global BOOK_NUMBER
     global BOOK_DESCRIPTIONS
     url = urljoin('https://tululu.org/l55/', page)
@@ -41,7 +58,11 @@ def get_books_from_page(page: str):
 
         book_id = book_id.replace('/', '').replace('b', '')
         try:
-            book_description = get_book(book_url, book_id)
+            book_description = get_book(book_url,
+                                        book_id,
+                                        dest_folder,
+                                        skip_imgs,
+                                        skip_txt)
         except (ConnectionError, InvalidURL, HTTPError):
             logging.info(f'Book with id = {book_id} not found.\n')
             continue
@@ -56,13 +77,21 @@ def get_book_cards(text):
     return book_cards
 
 
-def get_book(book_url, book_id):
+def get_book(book_url, book_id, dest_folder, skip_imgs, skip_txt):
     book_description = parse_book_page(book_url)
-    book_path = save_book_text(book_id, book_description['title'])
-    book_description.update({'book_path': book_path})
+    if skip_txt:
+        book_description.update({'book_path': 'Not downloaded'})
+    else:
+        book_path = save_book_text(book_id,
+                                   book_description['title'],
+                                   dest_folder)
+        book_description.update({'book_path': book_path})
 
-    img_src = save_book_cover(book_description['img_src'])
-    book_description.update({'img_src': img_src})
+    if skip_imgs:
+        book_description.update({'img_src': 'Not downloaded'})
+    else:
+        img_src = save_book_cover(book_description['img_src'], dest_folder)
+        book_description.update({'img_src': img_src})
 
     return book_description
 
@@ -103,8 +132,10 @@ def parse_book_page(book_url):
     return book_description
 
 
-def save_book_description(description):
-    with open('book_descriptions.json', 'w') as json_file:
+def save_book_description(description, dest_folder, json_path):
+    os.makedirs(dest_folder, exist_ok=True)
+    folder = os.path.join(dest_folder, json_path)
+    with open(folder, 'w') as json_file:
         json.dump(description, json_file, ensure_ascii=False, indent=4)
 
 
@@ -120,7 +151,8 @@ def download_image(url):
     return response.content
 
 
-def save_book_cover(url, folder='images'):
+def save_book_cover(url, dest_folder, folder_name='images'):
+    folder = os.path.join(dest_folder, folder_name)
     os.makedirs(folder, exist_ok=True)
 
     filename = get_image_name(url)
@@ -143,12 +175,15 @@ def download_txt(book_id):
     return response.text
 
 
-def save_book_text(book_id, filename, folder='books'):
+def save_book_text(book_id, filename, dest_folder, folder_name='books'):
+    folder = os.path.join(dest_folder, folder_name)
     os.makedirs(folder, exist_ok=True)
+
     book_text = download_txt(book_id)
     book_name = filename.replace(r'\\', '').replace('/', '')
     filename = f'{BOOK_NUMBER}.{book_name}.txt'
     filepath = os.path.join(folder, filename)
+
     with open(filepath, 'w') as file:
         file.write(book_text)
     return filepath
@@ -165,6 +200,10 @@ def main():
     args = parse_arguments()
     start_page = args.start_page
     end_page = args.end_page
+    dest_folder = args.dest_folder
+    skip_imgs = args.skip_imgs
+    skip_txt = args.skip_txt
+    json_path = args.json_path
 
     if start_page >= end_page:
         logging.error(
@@ -172,9 +211,15 @@ def main():
         )
         return
 
+    if os.path.splitext(json_path)[-1] != '.json':
+        logging.error(
+            'Enter the correct name of the JSON file.'
+        )
+        return
+
     for page in range(start_page, end_page):
-        get_books_from_page(str(page))
-    save_book_description(BOOK_DESCRIPTIONS)
+        get_books_from_page(str(page), dest_folder, skip_imgs, skip_txt)
+    save_book_description(BOOK_DESCRIPTIONS, dest_folder, json_path)
 
 
 if __name__ == '__main__':
