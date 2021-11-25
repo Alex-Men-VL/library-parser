@@ -21,7 +21,7 @@ def get_books_from_page(page: str):
 
     book_cards = get_book_cards(response.text)
     for book_card in book_cards:
-        book_id = book_card.find('a')['href']
+        book_id = book_card['href']
         book_url = urljoin('https://tululu.org/', book_id)
 
         book_id = book_id.replace('/', '').replace('b', '')
@@ -36,7 +36,8 @@ def get_books_from_page(page: str):
 
 def get_book_cards(text):
     soup = BeautifulSoup(text, 'lxml')
-    book_cards = soup.find_all('table', class_='d_book')
+    selector = '.ow_px_td .d_book .bookimage a'
+    book_cards = soup.select(selector)
     return book_cards
 
 
@@ -57,19 +58,22 @@ def parse_book_page(book_url):
     check_for_redirect(response)
 
     soup = BeautifulSoup(response.text, 'lxml')
-
-    title_author = soup.find(class_='ow_px_td').find('h1').text
+    selectors = {
+        'title': 'tr .ow_px_td h1',
+        'img': 'tr .ow_px_td .d_book .bookimage img',
+        'comments': 'tr .ow_px_td .texts .black',
+        'genres': 'tr .ow_px_td span.d_book a'
+    }
+    title_author = soup.select_one(selectors['title']).text
     title, author = title_author.split('::')
 
-    img_relative_address = soup.find(class_='bookimage').find('img')['src']
+    img_relative_address = soup.select_one(selectors['img'])['src']
     img_url = urljoin(book_url, img_relative_address).strip()
 
-    comment_tags = soup.find_all(class_='texts')
-    comment_texts = [
-        comment_tag.find(class_='black').text for comment_tag in comment_tags
-    ]
+    comment_tags = soup.select(selectors['comments'])
+    comment_texts = [comment_tag.text for comment_tag in comment_tags]
 
-    genres_tag = soup.find('span', class_='d_book').find_all('a')
+    genres_tag = soup.select(selectors['genres'])
     genres = [genre_tag.text for genre_tag in genres_tag]
 
     book_description = {
@@ -142,7 +146,7 @@ def check_for_redirect(response):
 
 def main():
     logging.basicConfig(level=logging.INFO)
-    for page in range(1, 5):
+    for page in range(1, 2):
         get_books_from_page(str(page))
     save_book_description(BOOK_DESCRIPTIONS)
 
