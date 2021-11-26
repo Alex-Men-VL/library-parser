@@ -22,7 +22,6 @@ def parse_arguments():
                         type=int)
     parser.add_argument('--end_page',
                         help='Enter the number of the last page',
-                        default=702,
                         type=int)
     parser.add_argument('--dest_folder',
                         help='Enter the path to the directory with the parsing '
@@ -42,6 +41,19 @@ def parse_arguments():
                         default='book_descriptions.json',
                         type=str)
     return parser.parse_args()
+
+
+def get_last_page_number():
+    url = 'https://tululu.org/l55/'
+    response = requests.get(url)
+
+    response.raise_for_status()
+    check_for_redirect(response)
+
+    soup = BeautifulSoup(response.text, 'lxml')
+    selector = 'tr .ow_px_td .center a'
+    last_page_number = soup.select(selector)[-1].text
+    return int(last_page_number)
 
 
 def get_books_from_page(page, dest_folder, skip_imgs, skip_txt):
@@ -196,10 +208,14 @@ def check_for_redirect(response):
 
 def main():
     logging.basicConfig(level=logging.INFO)
-
+    try:
+        last_page_number = get_last_page_number()
+    except (ConnectionError, InvalidURL, HTTPError):
+        logging.info("Couldn't access the site")
+        return
     args = parse_arguments()
     start_page = args.start_page
-    end_page = args.end_page
+    end_page = args.end_page if args.end_page else last_page_number
     dest_folder = args.dest_folder
     skip_imgs = args.skip_imgs
     skip_txt = args.skip_txt
@@ -217,7 +233,13 @@ def main():
         )
         return
 
-    for page in range(start_page, end_page):
+    if end_page > last_page_number:
+        logging.error(
+            f'The maximum possible number of the last page: {last_page_number}'
+        )
+        return
+
+    for page in range(start_page, end_page + 1):
         get_books_from_page(str(page), dest_folder, skip_imgs, skip_txt)
     save_book_description(BOOK_DESCRIPTIONS, dest_folder, json_path)
 
