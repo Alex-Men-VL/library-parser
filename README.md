@@ -34,7 +34,7 @@ $ python3 parse_tululu_category.py
 
 Пример использования
 ```bash
-$ python3 tululu.py --start_page 1 --end_page 3 --skip_imgs True
+$ python3 parse_tululu_category.py --start_page 1 --end_page 3 --skip_imgs True
 ```
 В этом случае скачаются все страницы с 1-ой по 2-ую включительно без картинок.
 
