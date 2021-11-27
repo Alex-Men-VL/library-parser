@@ -31,11 +31,11 @@ def parse_arguments():
     parser.add_argument('--skip_imgs',
                         help='Do not download images',
                         default=False,
-                        type=bool)
+                        action='store_true')
     parser.add_argument('--skip_txt',
                         help='Do not download books',
-                        default=False,
-                        type=bool)
+                        default=True,
+                        action='store_true')
     parser.add_argument('--json_path',
                         help='Specify your path to *.json file with results',
                         default='book_descriptions.json',
