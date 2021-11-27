@@ -194,6 +194,21 @@ def check_for_redirect(response):
         raise HTTPError
 
 
+def get_books(start_page, end_page, command_line_args):
+    book_descriptions = []
+    for page in range(start_page, end_page + 1):
+        try:
+            book_descriptions_per_page = get_books_from_page(str(page),
+                                                             command_line_args)
+        except RequestException:
+            logging.info(f'Books from page {page} have not been downloaded')
+        book_descriptions += book_descriptions_per_page
+
+    save_book_description(book_descriptions,
+                          command_line_args.dest_folder,
+                          command_line_args.json_path)
+
+
 def main():
     logging.basicConfig(level=logging.INFO)
     try:
@@ -223,18 +238,7 @@ def main():
         )
         return
 
-    book_number = 1
-    book_descriptions = []
-    for page in range(start_page, end_page + 1):
-        try:
-            get_books_from_page(str(page),
-                                args,
-                                book_number,
-                                book_descriptions)
-        except RequestException:
-            logging.info(f'Books from page {page} have not been downloaded')
-
-    save_book_description(book_descriptions, args.dest_folder, args.json_path)
+    get_books(start_page, end_page, args)
 
 
 if __name__ == '__main__':
