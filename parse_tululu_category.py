@@ -30,7 +30,7 @@ def parse_arguments():
                         action='store_true')
     parser.add_argument('--skip_txt',
                         help='Do not download books',
-                        default=False,
+                        default=True,
                         action='store_true')
     parser.add_argument('--json_path',
                         help='Specify your path to *.json file with results',
@@ -42,7 +42,6 @@ def parse_arguments():
 def get_last_page_number():
     url = 'https://tululu.org/l55/'
     response = requests.get(url)
-
     response.raise_for_status()
     check_for_redirect(response)
 
@@ -52,28 +51,26 @@ def get_last_page_number():
     return int(last_page_number)
 
 
-def get_books_from_page(page, args, book_number, book_descriptions):
+def get_books_from_page(page, args):
     url = urljoin('https://tululu.org/l55/', page)
     response = requests.get(url)
     response.raise_for_status()
     check_for_redirect(response)
 
     book_cards = get_book_cards(response.text)
+    book_descriptions = []
     for book_card in book_cards:
         book_id = book_card['href']
         book_url = urljoin('https://tululu.org/', book_id)
 
         book_id = book_id.replace('/', '').replace('b', '')
         try:
-            book_description = get_book(book_url,
-                                        book_id,
-                                        args,
-                                        book_number)
+            book_description = get_book(book_url, book_id, args)
         except RequestException:
             logging.info(f'Book with id = {book_id} not downloaded.\n')
             continue
         book_descriptions.append(book_description)
-        book_number += 1
+    return book_descriptions
 
 
 def get_book_cards(text):
@@ -130,13 +127,11 @@ def parse_book_page(book_url):
     book_description = {
         'title': title.strip(),
         'author': author.strip(),
-        'img_src': img_url,
-        'book_path': '',
         'comments': comment_texts,
         'genres': genres,
     }
 
-    return book_description
+    return book_description, img_url
 
 
 def save_book_description(description, dest_folder, json_path):
@@ -185,14 +180,13 @@ def download_txt(book_id):
     return response.text
 
 
-def save_book_text(book_id, book_number, filename, dest_folder,
-                   folder_name='books'):
+def save_book_text(book_id, filename, dest_folder, folder_name='books'):
     folder = os.path.join(dest_folder, folder_name)
     os.makedirs(folder, exist_ok=True)
 
     book_text = download_txt(book_id)
     book_name = filename.replace(r'\\', '').replace('/', '')
-    filename = f'{book_number}.{book_name}.txt'
+    filename = f'{book_id}.{book_name}.txt'
     filepath = os.path.join(folder, filename)
 
     with open(filepath, 'w') as file:
@@ -216,7 +210,7 @@ def main():
     start_page = args.start_page
     end_page = args.end_page if args.end_page else last_page_number
 
-    if start_page >= end_page:
+    if start_page > end_page:
         logging.error(
             'The number of start page cannot be greater than the last one.'
         )
