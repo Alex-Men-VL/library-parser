@@ -6,7 +6,7 @@ from urllib.parse import unquote, urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup
-from requests.exceptions import ConnectionError, HTTPError, InvalidURL
+from requests.exceptions import RequestException, HTTPError
 
 
 def parse_arguments():
@@ -56,6 +56,7 @@ def get_books_from_page(page, args, book_number, book_descriptions):
     url = urljoin('https://tululu.org/l55/', page)
     response = requests.get(url)
     response.raise_for_status()
+    check_for_redirect(response)
 
     book_cards = get_book_cards(response.text)
     for book_card in book_cards:
@@ -68,8 +69,8 @@ def get_books_from_page(page, args, book_number, book_descriptions):
                                         book_id,
                                         args,
                                         book_number)
-        except (ConnectionError, InvalidURL, HTTPError):
-            logging.info(f'Book with id = {book_id} not found.\n')
+        except RequestException:
+            logging.info(f'Book with id = {book_id} not downloaded.\n')
             continue
         book_descriptions.append(book_description)
         book_number += 1
@@ -208,7 +209,7 @@ def main():
     logging.basicConfig(level=logging.INFO)
     try:
         last_page_number = get_last_page_number()
-    except (ConnectionError, InvalidURL, HTTPError):
+    except RequestException:
         logging.info("Couldn't access the site")
         return
     args = parse_arguments()
@@ -236,10 +237,13 @@ def main():
     book_number = 1
     book_descriptions = []
     for page in range(start_page, end_page + 1):
-        get_books_from_page(str(page),
-                            args,
-                            book_number,
-                            book_descriptions)
+        try:
+            get_books_from_page(str(page),
+                                args,
+                                book_number,
+                                book_descriptions)
+        except RequestException:
+            logging.info(f'Books from page {page} have not been downloaded')
 
     save_book_description(book_descriptions, args.dest_folder, args.json_path)
 
