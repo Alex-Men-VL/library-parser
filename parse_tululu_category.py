@@ -9,10 +9,6 @@ from bs4 import BeautifulSoup
 from requests.exceptions import ConnectionError, HTTPError, InvalidURL
 
 
-BOOK_NUMBER = 1
-BOOK_DESCRIPTIONS = []
-
-
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Downloading books from the '
                                                  'website tululu.org')
@@ -34,7 +30,7 @@ def parse_arguments():
                         action='store_true')
     parser.add_argument('--skip_txt',
                         help='Do not download books',
-                        default=True,
+                        default=False,
                         action='store_true')
     parser.add_argument('--json_path',
                         help='Specify your path to *.json file with results',
@@ -56,9 +52,7 @@ def get_last_page_number():
     return int(last_page_number)
 
 
-def get_books_from_page(page, dest_folder, skip_imgs, skip_txt):
-    global BOOK_NUMBER
-    global BOOK_DESCRIPTIONS
+def get_books_from_page(page, args, book_number, book_descriptions):
     url = urljoin('https://tululu.org/l55/', page)
     response = requests.get(url)
     response.raise_for_status()
@@ -72,14 +66,13 @@ def get_books_from_page(page, dest_folder, skip_imgs, skip_txt):
         try:
             book_description = get_book(book_url,
                                         book_id,
-                                        dest_folder,
-                                        skip_imgs,
-                                        skip_txt)
+                                        args,
+                                        book_number)
         except (ConnectionError, InvalidURL, HTTPError):
             logging.info(f'Book with id = {book_id} not found.\n')
             continue
-        BOOK_DESCRIPTIONS.append(book_description)
-        BOOK_NUMBER += 1
+        book_descriptions.append(book_description)
+        book_number += 1
 
 
 def get_book_cards(text):
@@ -89,20 +82,21 @@ def get_book_cards(text):
     return book_cards
 
 
-def get_book(book_url, book_id, dest_folder, skip_imgs, skip_txt):
+def get_book(book_url, book_id, args, book_number):
     book_description = parse_book_page(book_url)
-    if skip_txt:
+    if args.skip_txt:
         book_description.update({'book_path': 'Not downloaded'})
     else:
         book_path = save_book_text(book_id,
+                                   book_number,
                                    book_description['title'],
-                                   dest_folder)
+                                   args.dest_folder)
         book_description.update({'book_path': book_path})
 
-    if skip_imgs:
+    if args.skip_imgs:
         book_description.update({'img_src': 'Not downloaded'})
     else:
-        img_src = save_book_cover(book_description['img_src'], dest_folder)
+        img_src = save_book_cover(book_description['img_src'], args.dest_folder)
         book_description.update({'img_src': img_src})
 
     return book_description
@@ -145,7 +139,10 @@ def parse_book_page(book_url):
 
 
 def save_book_description(description, dest_folder, json_path):
-    os.makedirs(dest_folder, exist_ok=True)
+    try:
+        os.makedirs(dest_folder, exist_ok=True)
+    except FileNotFoundError:
+        pass
     folder = os.path.join(dest_folder, json_path)
     with open(folder, 'w') as json_file:
         json.dump(description, json_file, ensure_ascii=False, indent=4)
@@ -187,13 +184,14 @@ def download_txt(book_id):
     return response.text
 
 
-def save_book_text(book_id, filename, dest_folder, folder_name='books'):
+def save_book_text(book_id, book_number, filename, dest_folder,
+                   folder_name='books'):
     folder = os.path.join(dest_folder, folder_name)
     os.makedirs(folder, exist_ok=True)
 
     book_text = download_txt(book_id)
     book_name = filename.replace(r'\\', '').replace('/', '')
-    filename = f'{BOOK_NUMBER}.{book_name}.txt'
+    filename = f'{book_number}.{book_name}.txt'
     filepath = os.path.join(folder, filename)
 
     with open(filepath, 'w') as file:
@@ -235,13 +233,15 @@ def main():
         )
         return
 
+    book_number = 1
+    book_descriptions = []
     for page in range(start_page, end_page + 1):
         get_books_from_page(str(page),
-                            args.dest_folder,
-                            args.skip_imgs,
-                            args.skip_txt)
+                            args,
+                            book_number,
+                            book_descriptions)
 
-    save_book_description(BOOK_DESCRIPTIONS, args.dest_folder, args.json_path)
+    save_book_description(book_descriptions, args.dest_folder, args.json_path)
 
 
 if __name__ == '__main__':
