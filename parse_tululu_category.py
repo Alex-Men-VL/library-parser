@@ -30,13 +30,28 @@ def parse_arguments():
                         action='store_true')
     parser.add_argument('--skip_txt',
                         help='Do not download books',
-                        default=True,
+                        default=False,
                         action='store_true')
     parser.add_argument('--json_path',
                         help='Specify your path to *.json file with results',
                         default='book_descriptions.json',
                         type=str)
     return parser.parse_args()
+
+
+def get_books(start_page, end_page, command_line_args):
+    book_descriptions = []
+    for page in range(start_page, end_page + 1):
+        try:
+            book_descriptions_per_page = get_books_from_page(str(page),
+                                                             command_line_args)
+        except RequestException:
+            logging.info(f'Books from page {page} have not been downloaded')
+        book_descriptions += book_descriptions_per_page
+
+    save_book_description(book_descriptions,
+                          command_line_args.dest_folder,
+                          command_line_args.json_path)
 
 
 def get_last_page_number():
@@ -192,21 +207,6 @@ def save_book_text(book_id, filename, dest_folder, folder_name='books'):
 def check_for_redirect(response):
     if response.history:
         raise HTTPError
-
-
-def get_books(start_page, end_page, command_line_args):
-    book_descriptions = []
-    for page in range(start_page, end_page + 1):
-        try:
-            book_descriptions_per_page = get_books_from_page(str(page),
-                                                             command_line_args)
-        except RequestException:
-            logging.info(f'Books from page {page} have not been downloaded')
-        book_descriptions += book_descriptions_per_page
-
-    save_book_description(book_descriptions,
-                          command_line_args.dest_folder,
-                          command_line_args.json_path)
 
 
 def main():
