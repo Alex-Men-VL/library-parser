@@ -216,10 +216,6 @@ def main():
     args = parse_arguments()
     start_page = args.start_page
     end_page = args.end_page if args.end_page else last_page_number
-    dest_folder = args.dest_folder
-    skip_imgs = args.skip_imgs
-    skip_txt = args.skip_txt
-    json_path = args.json_path
 
     if start_page >= end_page:
         logging.error(
@@ -227,7 +223,7 @@ def main():
         )
         return
 
-    if os.path.splitext(json_path)[-1] != '.json':
+    if os.path.splitext(args.json_path)[-1] != '.json':
         logging.error(
             'Enter the correct name of the JSON file.'
         )
@@ -240,8 +236,12 @@ def main():
         return
 
     for page in range(start_page, end_page + 1):
-        get_books_from_page(str(page), dest_folder, skip_imgs, skip_txt)
-    save_book_description(BOOK_DESCRIPTIONS, dest_folder, json_path)
+        get_books_from_page(str(page),
+                            args.dest_folder,
+                            args.skip_imgs,
+                            args.skip_txt)
+
+    save_book_description(BOOK_DESCRIPTIONS, args.dest_folder, args.json_path)
 
 
 if __name__ == '__main__':
