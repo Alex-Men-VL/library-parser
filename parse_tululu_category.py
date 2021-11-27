@@ -6,7 +6,7 @@ from urllib.parse import unquote, urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup
-from requests.exceptions import RequestException, HTTPError
+from requests.exceptions import HTTPError, RequestException
 
 
 def parse_arguments():
@@ -26,11 +26,9 @@ def parse_arguments():
                         type=str)
     parser.add_argument('--skip_imgs',
                         help='Do not download images',
-                        default=False,
                         action='store_true')
     parser.add_argument('--skip_txt',
                         help='Do not download books',
-                        default=False,
                         action='store_true')
     parser.add_argument('--json_path',
                         help='Specify your path to *.json file with results',
