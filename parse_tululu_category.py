@@ -80,21 +80,16 @@ def get_book_cards(text):
     return book_cards
 
 
-def get_book(book_url, book_id, args, book_number):
-    book_description = parse_book_page(book_url)
-    if args.skip_txt:
-        book_description.update({'book_path': 'Not downloaded'})
-    else:
+def get_book(book_url, book_id, args):
+    book_description, img_url = parse_book_page(book_url)
+    if not args.skip_txt:
         book_path = save_book_text(book_id,
-                                   book_number,
                                    book_description['title'],
                                    args.dest_folder)
         book_description.update({'book_path': book_path})
 
-    if args.skip_imgs:
-        book_description.update({'img_src': 'Not downloaded'})
-    else:
-        img_src = save_book_cover(book_description['img_src'], args.dest_folder)
+    if not args.skip_imgs:
+        img_src = save_book_cover(img_url, args.dest_folder)
         book_description.update({'img_src': img_src})
 
     return book_description
