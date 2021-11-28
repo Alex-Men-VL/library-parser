@@ -59,8 +59,8 @@ def get_last_page_number():
     check_for_redirect(response)
 
     soup = BeautifulSoup(response.text, 'lxml')
-    selector = 'tr .ow_px_td .center a'
-    last_page_number = soup.select(selector)[-1].text
+    selector = 'tr .ow_px_td .center a:last-child'
+    last_page_number = soup.select(selector)[0].text
     return int(last_page_number)
 
 
