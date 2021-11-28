@@ -20,8 +20,8 @@ def parse_arguments():
                         help='Enter the number of the last page',
                         type=int)
     parser.add_argument('--dest_folder',
-                        help='Enter the path to the directory with the parsing '
-                             'results: pictures, books, JSON',
+                        help='Enter the path to the directory with the '
+                             'parsing results: pictures, books, JSON',
                         default='',
                         type=str)
     parser.add_argument('--skip_imgs',
@@ -37,19 +37,20 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def get_books(start_page, end_page, command_line_args):
+def get_books(start_page, end_page, skip_txt,
+              skip_imgs, dest_folder, json_path):
     book_descriptions = []
     for page in range(start_page, end_page + 1):
         try:
-            book_descriptions_per_page = get_books_from_page(str(page),
-                                                             command_line_args)
+            book_descriptions_per_page = get_books_from_page(
+                str(page), skip_txt,
+                skip_imgs, dest_folder
+            )
         except RequestException:
             logging.info(f'Books from page {page} have not been downloaded')
         book_descriptions += book_descriptions_per_page
 
-    save_book_description(book_descriptions,
-                          command_line_args.dest_folder,
-                          command_line_args.json_path)
+    save_book_description(book_descriptions, dest_folder, json_path)
 
 
 def get_last_page_number():
@@ -64,7 +65,7 @@ def get_last_page_number():
     return int(last_page_number)
 
 
-def get_books_from_page(page, args):
+def get_books_from_page(page, skip_txt, skip_imgs, dest_folder):
     url = urljoin('https://tululu.org/l55/', page)
     response = requests.get(url)
     response.raise_for_status()
@@ -78,7 +79,8 @@ def get_books_from_page(page, args):
 
         book_id = book_id.replace('/', '').replace('b', '')
         try:
-            book_description = get_book(book_url, book_id, args)
+            book_description = get_book(book_url, book_id, skip_txt,
+                                        skip_imgs, dest_folder)
         except RequestException:
             logging.info(f'Book with id = {book_id} not downloaded.\n')
             continue
@@ -93,16 +95,15 @@ def get_book_cards(text):
     return book_cards
 
 
-def get_book(book_url, book_id, args):
+def get_book(book_url, book_id, skip_txt, skip_imgs, dest_folder):
     book_description, img_url = parse_book_page(book_url)
-    if not args.skip_txt:
-        book_path = save_book_text(book_id,
-                                   book_description['title'],
-                                   args.dest_folder)
+    if not skip_txt:
+        book_path = save_book_text(book_id, book_description['title'],
+                                   dest_folder)
         book_description.update({'book_path': book_path})
 
-    if not args.skip_imgs:
-        img_src = save_book_cover(img_url, args.dest_folder)
+    if not skip_imgs:
+        img_src = save_book_cover(img_url, dest_folder)
         book_description.update({'img_src': img_src})
 
     return book_description
@@ -214,11 +215,16 @@ def main():
     except RequestException:
         logging.info("Couldn't access the site")
         return
-    args = parse_arguments()
-    start_page = args.start_page
-    end_page = args.end_page if args.end_page else last_page_number
 
-    if start_page > end_page:
+    args = parse_arguments()
+    if not args.end_page:
+        args.end_page = last_page_number
+    elif args.end_page > last_page_number:
+        logging.error(
+            f'The maximum possible number of the last page: {last_page_number}'
+        )
+        return
+    elif args.end_page < args.start_page:
         logging.error(
             'The number of start page cannot be greater than the last one.'
         )
@@ -230,13 +236,8 @@ def main():
         )
         return
 
-    if end_page > last_page_number:
-        logging.error(
-            f'The maximum possible number of the last page: {last_page_number}'
-        )
-        return
-
-    get_books(start_page, end_page, args)
+    get_books(args.start_page, args.end_page, args.skip_txt,
+              args.skip_imgs, args.dest_folder, args.json_path)
 
 
 if __name__ == '__main__':
