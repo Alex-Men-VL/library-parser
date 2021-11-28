@@ -144,11 +144,8 @@ def parse_book_page(book_url):
 
 
 def save_book_description(description, dest_folder, json_path):
-    try:
-        os.makedirs(dest_folder, exist_ok=True)
-    except FileNotFoundError:
-        pass
     folder = os.path.join(dest_folder, json_path)
+
     with open(folder, 'w') as json_file:
         json.dump(description, json_file, ensure_ascii=False, indent=4)
 
@@ -235,6 +232,9 @@ def main():
             'Enter the correct name of the JSON file.'
         )
         return
+
+    if args.dest_folder:
+        os.makedirs(args.dest_folder, exist_ok=True)
 
     get_books(args.start_page, args.end_page, args.skip_txt,
               args.skip_imgs, args.dest_folder, args.json_path)
