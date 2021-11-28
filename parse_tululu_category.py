@@ -42,36 +42,43 @@ def get_books(start_page, end_page, skip_txt,
     book_descriptions = []
     for page in range(start_page, end_page + 1):
         try:
-            book_descriptions_per_page = get_books_from_page(
-                str(page), skip_txt,
-                skip_imgs, dest_folder
-            )
+            soup = parse_page(page)
         except RequestException:
             logging.info(f'Books from page {page} have not been downloaded')
-        book_descriptions += book_descriptions_per_page
+            continue
+
+        book_descriptions += get_books_from_page(soup, skip_txt,
+                                                 skip_imgs, dest_folder)
 
     save_book_description(book_descriptions, dest_folder, json_path)
 
 
-def get_last_page_number():
-    url = 'https://tululu.org/l55/'
+def parse_page(page):
+    url = urljoin('https://tululu.org/l55/', page)
+    soup = get_soup(url)
+    return soup
+
+
+def get_soup(url):
     response = requests.get(url)
     response.raise_for_status()
     check_for_redirect(response)
 
     soup = BeautifulSoup(response.text, 'lxml')
+    return soup
+
+
+def get_last_page_number():
+    url = 'https://tululu.org/l55/'
+    soup = get_soup(url)
+
     selector = 'tr .ow_px_td .center a:last-child'
     last_page_number = soup.select(selector)[0].text
     return int(last_page_number)
 
 
-def get_books_from_page(page, skip_txt, skip_imgs, dest_folder):
-    url = urljoin('https://tululu.org/l55/', page)
-    response = requests.get(url)
-    response.raise_for_status()
-    check_for_redirect(response)
-
-    book_cards = get_book_cards(response.text)
+def get_books_from_page(soup, skip_txt, skip_imgs, dest_folder):
+    book_cards = get_book_cards(soup)
     book_descriptions = []
     for book_card in book_cards:
         book_id = book_card['href']
@@ -88,8 +95,7 @@ def get_books_from_page(page, skip_txt, skip_imgs, dest_folder):
     return book_descriptions
 
 
-def get_book_cards(text):
-    soup = BeautifulSoup(text, 'lxml')
+def get_book_cards(soup):
     selector = '.ow_px_td .d_book .bookimage a'
     book_cards = soup.select(selector)
     return book_cards
@@ -110,11 +116,7 @@ def get_book(book_url, book_id, skip_txt, skip_imgs, dest_folder):
 
 
 def parse_book_page(book_url):
-    response = requests.get(book_url)
-    response.raise_for_status()
-    check_for_redirect(response)
-
-    soup = BeautifulSoup(response.text, 'lxml')
+    soup = get_soup(book_url)
     selectors = {
         'title': 'tr .ow_px_td h1',
         'img': 'tr .ow_px_td .d_book .bookimage img',
