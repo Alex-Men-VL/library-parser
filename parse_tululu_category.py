@@ -42,7 +42,7 @@ def get_books(start_page, end_page, skip_txt,
     book_descriptions = []
     for page in range(start_page, end_page + 1):
         try:
-            soup = parse_page(page)
+            soup = parse_page(str(page))
         except RequestException:
             logging.info(f'Books from page {page} have not been downloaded')
             continue
