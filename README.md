@@ -1,9 +1,7 @@
 # Парсер книг с сайте [tululu.org](https://tululu.org/)
 
 Скрипт позволяет скачать книги по фантастике в txt формате из бесплатной 
-библиотеки 
-[tululu](https://tululu.org/). Вместе с текстом книг скрипт получает их обложки 
-и основные характеристики (автор, жанр, комментарии).
+библиотеки [tululu](https://tululu.org/). Скаченные книги выкладывается на сайт.
 
 ## Как установить
 
@@ -19,8 +17,14 @@ $ pip install -r requirements.txt
 $ python3 parse_tululu_category.py
 ```
 
+- Запуск формирования HTML страничек
+```bash
+$ python3 render_website.py
+```
+
 Скаченные текста книг хранятся в папке `books`, а их обложки в папке 
 `images`.
+HTML странички хранятся в папке `pages`.
 
 ## Аргументы
 
@@ -37,6 +41,12 @@ $ python3 parse_tululu_category.py
 $ python3 parse_tululu_category.py --end_page 3 --skip_txt
 ```
 В этом случае скачаются все страницы с 1-ой по 3-ую включительно без текста.
+
+## Сайт на GitHub Pages
+
+Пример готового сайта можно увидеть по [ссылке](https://alex-men-vl.github.io/library-parser/pages/index1.html).
+
+![alt text](screenshots/site_page.png "Первая страничка сайта с книгами")
 
 ## Цель проекта
 
