@@ -1,4 +1,5 @@
 import json
+from more_itertools import chunked
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from livereload import Server
@@ -15,7 +16,7 @@ def on_reload():
     with open('book_descriptions.json', 'r') as json_file:
         books_json = json_file.read()
 
-    books = json.loads(books_json)
+    books = list(chunked(json.loads(books_json), 2))
 
     rendered_page = template.render(books=books)
 
