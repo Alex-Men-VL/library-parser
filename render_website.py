@@ -23,7 +23,9 @@ def on_reload():
 
     os.makedirs('pages', exist_ok=True)
     for page_number, books_per_page in enumerate(books_per_pages, start=1):
-        rendered_page = template.render(books=books_per_page)
+        rendered_page = template.render(books=books_per_page,
+                                        current_page_number=page_number,
+                                        pages_number=books_per_pages.__len__())
 
         html_file_name = f'index{page_number}.html'
         html_path = os.path.join('pages', html_file_name)
