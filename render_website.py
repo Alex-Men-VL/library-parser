@@ -1,4 +1,6 @@
 import json
+import os
+
 from more_itertools import chunked
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -16,12 +18,17 @@ def on_reload():
     with open('book_descriptions.json', 'r') as json_file:
         books_json = json_file.read()
 
-    books = list(chunked(json.loads(books_json), 2))
+    books = chunked(json.loads(books_json), 2)
+    books_per_pages = list(chunked(books, 10))
 
-    rendered_page = template.render(books=books)
+    os.makedirs('pages', exist_ok=True)
+    for page_number, books_per_page in enumerate(books_per_pages, start=1):
+        rendered_page = template.render(books=books_per_page)
 
-    with open('index.html', 'w', encoding="utf8") as file:
-        file.write(rendered_page)
+        html_file_name = f'index{page_number}.html'
+        html_path = os.path.join('pages', html_file_name)
+        with open(html_path, 'w', encoding="utf8") as file:
+            file.write(rendered_page)
 
 
 def main():
@@ -29,7 +36,7 @@ def main():
     server = Server()
     server.watch('template.html', on_reload)
 
-    server.serve(root='.')
+    server.serve(default_filename='pages/index1.html', root='.')
 
 
 if __name__ == '__main__':
