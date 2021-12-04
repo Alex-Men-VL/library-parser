@@ -18,8 +18,11 @@ def on_reload():
     with open('book_descriptions.json', 'r') as json_file:
         books_json = json_file.read()
 
-    books = chunked(json.loads(books_json), 2)
-    books_per_pages = list(chunked(books, 10))
+    books_count_per_line = 2
+    books = chunked(json.loads(books_json), books_count_per_line)
+
+    book_column_count = 10
+    books_per_pages = list(chunked(books, book_column_count))
 
     os.makedirs('pages', exist_ok=True)
     for page_number, books_per_page in enumerate(books_per_pages, start=1):
