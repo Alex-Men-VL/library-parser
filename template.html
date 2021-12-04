@@ -58,11 +58,10 @@
                       {% endfor %}
                       {% if book.book_path %}
                       <p class="card-text">
-                        <small class="text-muted"><a target="_blank" href="../{{ book.book_path|urlencode }}">Читать</a></small>
-                      </p>
+                        <h5 class="text-muted"><a target="_blank" href="../{{ book.book_path|urlencode }}">Читать</a></h5>
                       {% else %}
                       <p class="card-text">
-                        <small class="text-muted">Книга не скачена</small></p>
+                        <h5 class="text-muted">Книга не скачена</h5>
                       {% endif %}
                     </div>
                   </div>
